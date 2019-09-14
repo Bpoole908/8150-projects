@@ -1,6 +1,9 @@
+# Input desired initial state and goal state. Each '-' represent a row in
+# the matrix, DO NOT DELETE the '-'!
+
 a_star:
   init_state:
-    - [1, 2, 0]
+    - [2, 1, 0]
     - [5, 4, 3]
     - [6, 7, 8]
   goal_state:

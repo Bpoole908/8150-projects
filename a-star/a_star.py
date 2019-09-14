@@ -29,6 +29,7 @@ class Puzzle_Node(object):
         self.f = 0
     
     def equals(self, other):
+        #set_trace()
         return (self.state == other).all()
 
     def move(self, row_empty, col_empty, row_new, col_new):
@@ -77,8 +78,8 @@ class AStar(object):
         self.goal = goal_state
  
     def solve(self):
-        open_set = []
-        closed_set = []
+        open_set = [] # frontier
+        closed_set = [] # explored
 
         # Init state node object
         current_node = Puzzle_Node(state=self.init, parent=None)
@@ -92,22 +93,23 @@ class AStar(object):
         # Add node to open_set
         open_set.append(current_node)
         while open_set:
+            # Sort nodes then remove smallest score node adding it to the closed set
             open_set.sort(key= lambda x: x.f, reverse=True)
             current_node = open_set.pop()
             closed_set.append(current_node)
-            print(current_node.f)
+            print("Current f score: {}".format(current_node.f))
+
             # Goal check
             if current_node.equals(self.goal):
+                print("FOUND")
                 self.print_solution(current_node)
                 print(len(open_set))
                 return
+            
+            # Generate current nodes children
+            children = current_node.generate_children() 
 
-            #print(current_node.state)
-            #print("{} = {} + {}".format(current_node.f, current_node.g, current_node.h))
-            children = current_node.generate_children()
-            set_trace()
             for child in children:
-
                 if any(child.equals(n.state) for n in closed_set):
                     continue
                 
@@ -121,11 +123,9 @@ class AStar(object):
                 if any(child.equals(n.state) and child.g > n.g for n in open_set):
                     continue
 
+                # assert consitency of heuristic 
+                assert child.h + 1 >= current_node.h
                 open_set.append(child)
-                
-            pass
-
-        pass
 
     def print_solution(self, current_node):
         if current_node.parent is None:
