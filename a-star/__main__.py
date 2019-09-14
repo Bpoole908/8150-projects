@@ -84,12 +84,50 @@ def solvable(state, goal):
 
     return (invs%2 == 0)
 
+def miss_placed(state, goal):
+    """ Calculates the total number of numbers out of place.
+
+        Finds the total number of mismatches between the state and goal.
+    
+    """
+
+    return  np.count_nonzero(state-goal)
+
+def manhattan(state, goal):
+    """ Calculates the manhattan distance given two states.
+
+        Finds the coordinates of all numbers in the state and goal. The 
+        absolute difference between the state and goal corresponding numbers
+        is then computed and summed.
+
+        Args:
+            state (ndarray): Current state
+
+            goal (ndarray): Goal state
+    """
+    distance = 0
+
+    for i in range(1, len(state.ravel())):
+        state_coords = np.hstack(np.where(state == i))
+        goal_coords = np.hstack(np.where(goal == i))
+
+        distance += np.abs(state_coords - goal_coords).sum() 
+
+    return distance
+
 if __name__ == "__main__":
     # Load config parameters
     working_dir = os.getcwd()
     config = load_config(dir=working_dir, config='config.yml')
     init_state = np.array(config['a_star']['init_state'])
     goal_state = np.array(config['a_star']['goal_state'])
+    
+    if config['a_star']['heuristic'] == "manhattan":
+        heuristic = manhattan
+    elif config['a_star']['heuristic'] == "miss_placed":
+        heuristic = miss_placed
+    else:
+        raise ValueError("Heuristic name invalid!")
 
     # Print initial and goal state
     print("Initial state:\n{}".format(init_state))
@@ -100,13 +138,18 @@ if __name__ == "__main__":
 
     # Test if A* problem is solvable
     can_solve = solvable(init_state, goal_state)
+    print("="*50)
     if can_solve:
         print("PUZZLE IS SOLVABLE!")
     else:
-        print("WARNING: PUZZLE IS NOT SOLVABLE!")
+        print(
+            "WARNING: PUZZLE IS NOT SOLVABLE!\n"
+            "Enter `c` to proceed.\n" 
+            "Doing so will search the entire state space!",
+            "This will take a long time...")
         set_trace()
-    print("="*50)
 
     # Init and run A* solver
+    print("="*50)
     a_star =  AStar(init_state=init_state, goal_state=goal_state)
-    a_star.solve()
+    a_star.solve(heuristic=heuristic)
