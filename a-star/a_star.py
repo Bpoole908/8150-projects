@@ -24,11 +24,18 @@ class Puzzle_Node(object):
     def __init__(self, state, parent):
         self.state = state
         self.parent = parent
-        self.g = 0
-        self.h = 0
-        self.f = 0
-    
+        self.g = float('inf')
+        self.h = float('inf')
+        self.f = float('inf')
+
+    def __bytes__(self):
+        return self.state.tostring()
+
+    def __lt__(self,other):
+        return str(self) < str(other)
+
     def equals(self, other):
+        #set_trace()
         return (self.state == other).all()
 
     def move(self, row_empty, col_empty, row_new, col_new):
@@ -77,8 +84,9 @@ class AStar(object):
         self.goal = goal_state
  
     def solve(self):
-        open_set = []
-        closed_set = []
+        frontier = PriorityQueue() 
+        frontier_lookup = {}
+        explored = {}
 
         # Init state node object
         current_node = Puzzle_Node(state=self.init, parent=None)
@@ -89,40 +97,53 @@ class AStar(object):
         current_node.f = current_node.g + current_node.h
         current_node.parent = None
 
-        # Add node to open_set
-        open_set.append(current_node)
-        while open_set:
-            open_set.sort(key= lambda x: x.f, reverse=True)
-            current_node = open_set.pop()
-            closed_set.append(current_node)
-            print(current_node.f)
+        # Add current node to open_set
+        frontier.put((current_node.f, current_node))
+        frontier_lookup[bytes(current_node)] = current_node.g
+        while not frontier.empty():
+            print("{:-^50s}".format("POP OPEN SET"))
+            # Remove the node with the smallest score and add it to the closed set
+            _, current_node = frontier.get()
+            explored[bytes(current_node)] = current_node
+            print("Current f score: {}".format(current_node.f))
+            print(frontier.qsize())
             # Goal check
             if current_node.equals(self.goal):
                 self.print_solution(current_node)
-                print(len(open_set))
+             
                 return
-
-            #print(current_node.state)
-            #print("{} = {} + {}".format(current_node.f, current_node.g, current_node.h))
-            children = current_node.generate_children()
-            set_trace()
+            
+            # Generate current nodes children
+            children = current_node.generate_children() 
             for child in children:
-
-                if any(child.equals(n.state) for n in closed_set):
-                    continue
+                #print("{:-^50s}".format("CHECKING A CHILD OUT OF " + str(len(children))))
+                # if any(child.equals(n.state) for n in closed_set):
+                #     print("CHILD IN CLOSED SET\n", child.state)
+                #     continue
                 
-                child.g =  current_node.g + 1
-                child.h = manhattan(child.state, self.goal)
-                child.f = child.g + child.h
-                child.parent = current_node
+                # child.g =  current_node.g + 1
+                # child.h = manhattan(child.state, self.goal)
+                # child.f = child.g + child.h
+                # child.parent = current_node
 
                 # Account for child states that already exist in the open_set
                 # but are more expensive.
-                if any(child.equals(n.state) and child.g > n.g for n in open_set):
+                # if any(child.equals(n.state) and child.g >= n.g for n in open_set):
+                #     print("CHILD IN OPEN SET AND GREATER", child.state)
+                #     continue
+                if bytes(child) in explored:
                     continue
+                new_g =  current_node.g + 1
+                if (bytes(child) not in frontier_lookup 
+                    or new_g < frontier_lookup.get(bytes(child), float('inf'))):
 
-                open_set.append(child)
-                
+                    child.g = new_g
+                    child.h = manhattan(child.state, self.goal)
+                    child.f = child.g + child.h
+                    child.parent = current_node
+                    #set_trace()
+                    frontier.put((child.f, child))
+                    frontier_lookup[bytes(child)] = new_g
             pass
 
         pass

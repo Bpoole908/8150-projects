@@ -12,8 +12,10 @@ def load_config(dir, config='config.yml'):
     Args:
         file (str): The location of yml file that needs to be loaded.
 
+        config (str): The name of the config file to be loaded.
+
     Returns:
-        Returns a dictionary based on the yml file.
+        A dictionary based on the yml file.
     """
 
     file = os.path.join(dir, config)
@@ -47,48 +49,65 @@ def solvable(state, goal):
             mapped = {8: 1, 7: 2, 6: 3, 5: 4, 4: 5, 3: 6, 2: 7, 1: 8}
 
         Args:
-            state (ndarray): Initial state.
+            state (ndarray): Initial state to test.
 
-            goal (ndarray): Goal state.
+            goal (ndarray): Goal state, i.e. desired number system.
         
         Returns:
             Returns true the the number of inversions is even (solvable) and
             false if the number of inversions is odd (not solvable).
     """
-    base = [1,2,3,4,5,6,7,8]
-    invs = 0
-    state = state[state != 0]
-    goal = goal[goal != 0]
-    mapped = {g: b for g, b in zip(goal, base)}
-    state = state.ravel()
+    base = [1,2,3,4,5,6,7,8] # base number system to map to
+    invs = 0 # Total number of inversions  
 
+    # Remove blanks (i.e. 0's) from the state and flaten to a vector
+    state = state[state != 0]
+    state = state.ravel() 
+
+    # Remove blanks (i.e. 0's) from the goal
+    goal = goal[goal != 0] 
+
+    # Map goal number system to base number system
+    mapped = {g: b for g, b in zip(goal, base)} 
+
+    # Calculate inversions 
+    print("Key: {}".format(goal))
     for ii, i  in enumerate(state):
-        print(i)
-        print(state[ii+1:])
+        i_invs = 0
+        print("Checking {} against {}...".format(i, state[ii+1:]))
         for j in state[ii+1:]:
             if mapped[i]>mapped[j]: 
-                invs += 1
-        print("Inversions: {}".format(invs))
+                i_invs += 1
+        invs += i_invs
+        print("{} has {} inversions ".format(i, invs))
+    print("Total inversions: {}".format(invs))
 
     return (invs%2 == 0)
 
 if __name__ == "__main__":
+    # Load config parameters
     working_dir = os.getcwd()
     config = load_config(dir=working_dir, config='config.yml')
     init_state = np.array(config['a_star']['init_state'])
     goal_state = np.array(config['a_star']['goal_state'])
 
+    # Print initial and goal state
     print("Initial state:\n{}".format(init_state))
     duplicate_check(init_state)
     print("Goal state:\n{}".format(goal_state))
     duplicate_check(goal_state)
     print("="*50)
 
+    # Test if A* problem is solvable
     can_solve = solvable(init_state, goal_state)
-    if not can_solve:
-        print("WARNING: CANT SOLVE THIS PUZZLE!")
+    if can_solve:
+        print("PUZZLE IS SOLVABLE!")
+    else:
+        print("WARNING: PUZZLE IS NOT SOLVABLE!")
         set_trace()
+    print("="*50)
 
+    # Init and run A* solver
     a_star =  AStar(init_state=init_state, goal_state=goal_state)
     a_star.solve()
     pass
