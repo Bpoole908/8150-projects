@@ -112,8 +112,16 @@ class AStar(object):
 
             Notes:
                 Once A* has found a solution it will print the required steps
-                along with the h, g, and f scores for each step.If the problem 
-                is not solvable the program will get stuck in an infinite loop.
+                along with the h, g, and f scores for each step. If the problem 
+                is not solvable the program will attempt to iterate over the
+                entire state space.
+            
+            Args:
+                heuristic (func): A heuristic function thats input is the goal state.
+
+            Returns:
+                A boolean where a true value corresponds to solving the problem
+                while false corresponds to an unsolvable problem.
         """
         open_set = [] # frontier
         closed_set = [] # explored
@@ -139,12 +147,11 @@ class AStar(object):
         
             # Goal check
             if current_node.equals(self.goal):
-                #print("FOUND")
-                self.print_solution(current_node)
+                self.print_solution(current_node) # output solution
                 print("Nodes Expanded: {}".format(len(closed_set)))
                 print("Nodes generated: {}".format(generated))
-                return
-            #print("{} = {} + {}\n".format(current_node.f, current_node.g, current_node.h))
+                return True
+
             # Generate current nodes children and loop through them
             children = current_node.generate_children()
             generated += len(children)
@@ -164,6 +171,8 @@ class AStar(object):
                 # Add child
                 # assert child.h + 1 >= current_node.h
                 open_set.append(child)
+
+        return False
 
     def print_solution(self, current_node, step=0):
         """ Prints solution recursively.

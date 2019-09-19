@@ -2,10 +2,10 @@
 # the matrix, DO NOT DELETE the '-'!
 
 a_star:
-  heuristic: "manhattan" # choices: manhattan or miss_placed
+  heuristic: manhattan # choices: manhattan or misplaced
   init_state:
     - [1, 2, 3]
-    - [4, 7, 6]
+    - [4, 6, 7]
     - [5, 8, 0]
   goal_state:
     - [1, 2, 3]

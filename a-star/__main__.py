@@ -17,13 +17,14 @@ def load_config(dir, config='config.yml'):
     Returns:
         A dictionary based on the yml file.
     """
+    file_ = os.path.join(dir, config)
 
-    file = os.path.join(dir, config)
-    with open(file, 'r') as stream:
+    with open(file_, 'r') as stream:
         try:
             params = yaml.safe_load(stream)
         except yaml.YAMLError as exc:
             print(exc)
+
     return params
 
 def duplicate_check(a):
@@ -84,11 +85,19 @@ def solvable(state, goal):
 
     return (invs%2 == 0)
 
-def miss_placed(state, goal):
+def misplaced(state, goal):
     """ Calculates the total number of numbers out of place.
 
         Finds the total number of mismatches between the state and goal.
-    
+
+        Args:
+            state (ndarray): Current state
+
+            goal (ndarray): Goal state
+
+        Returns:
+            An interger valued heuristic representing the number of out of place
+            numbers (tiles) with respect to the goal state. 
     """
 
     return  np.count_nonzero(state-goal)
@@ -96,14 +105,18 @@ def miss_placed(state, goal):
 def manhattan(state, goal):
     """ Calculates the manhattan distance given two states.
 
-        Finds the coordinates of all numbers in the state and goal. The 
-        absolute difference between the state and goal corresponding numbers
+        Finds the coordinates of all numbers (tiles) in the state and goal. The 
+        absolute difference between the state's and goal's corresponding numbers
         is then computed and summed.
 
         Args:
             state (ndarray): Current state
 
             goal (ndarray): Goal state
+
+        Returns:
+            An interger valued heuristic representing the sum of all the numbers
+            distances (city block distance) from their goal position.
     """
     distance = 0
 
@@ -122,10 +135,11 @@ if __name__ == "__main__":
     init_state = np.array(config['a_star']['init_state'])
     goal_state = np.array(config['a_star']['goal_state'])
     
+    # Determine which heuristic to use
     if config['a_star']['heuristic'] == "manhattan":
         heuristic = manhattan
-    elif config['a_star']['heuristic'] == "miss_placed":
-        heuristic = miss_placed
+    elif config['a_star']['heuristic'] == "misplaced":
+        heuristic = misplaced
     else:
         raise ValueError("Heuristic name invalid!")
 
@@ -146,7 +160,7 @@ if __name__ == "__main__":
             "WARNING: PUZZLE IS NOT SOLVABLE!\n"
             "Enter `c` to proceed.\n" 
             "Doing so will search the entire state space!",
-            "This will take a long time...")
+            "This will take a long time and is not advised...")
         set_trace()
 
     # Init and run A* solver
