@@ -140,13 +140,16 @@ class Queens(object):
             queen_conflicts = self.queen_conflicts(queen=queen, coords=coords)
             
             total_conflicts += queen_conflicts
-            # print("Queen: {} Conflicts: {}/{}".format(
-            #     queen, queen_conflicts, total_conflicts))
 
         return total_conflicts
     
     def neighbors(self):
-        """ Generates all neighbors from the current board state."""
+        """ Generates all neighbors from the current board state.
+
+            Returns:
+                List of neighbor states (in form of queen coordinates) and 
+                a list of their corresponding conflicts.
+        """
         neighbors = []
         conflicts = []
         queen_coords = self.get_coords()

@@ -1,6 +1,0 @@
-queens:
-  n: 8 # number of queens
-  seed: Null # seed for INITIALLY generate board (useful for epoch=1 testing)
-  htype: random-restarts # choices: basic, sideways, or random-restarts
-  epochs: 100
-  sideways_moves: 1
