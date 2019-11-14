@@ -1,6 +1,8 @@
-region: us # optionsL: us or au
-seed: 3
-domain_size: 5 # number of colors to work with
-forward: True # enable forward checking
-propagation: False # enable propagation through singletons 
-heuristic: null # options mrv, degree, least, or null (i.e. None)
+problem:
+  region: us # optionsL: us or au
+  domain_size: 4 # number of colors to work with
+csp:
+  seed: 2
+  forward_checking: True # enable forward checking
+  propagation: False # enable propagation through singletons 
+  heuristics: False  # enable heuristics for unassigned selection and domain selection

@@ -59,10 +59,12 @@ if __name__ == '__main__':
     working_dir = os.getcwd()
     config_path = join(working_dir, 'config.yml')
     config = load_config(config_path)
+    problem_kwrags = config['problem']
+    csp_kwargs = config['csp']
     
-    region = region_selector(config['region'])
+    region = region_selector(problem_kwrags['region'])
 
 
-    csp = MapColoring(region, config['domain_size'])
-    assigned = csp.search(seed=config['seed'])
+    csp = MapColoring(region, problem_kwrags['domain_size'])
+    assigned = csp(**csp_kwargs)
     set_trace()
