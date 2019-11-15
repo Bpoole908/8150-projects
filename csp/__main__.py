@@ -64,7 +64,5 @@ if __name__ == '__main__':
     
     region = region_selector(problem_kwrags['region'])
 
-
     csp = MapColoring(region, problem_kwrags['domain_size'])
     assigned = csp(**csp_kwargs)
-    set_trace()

@@ -140,7 +140,7 @@ class MapColoring():
         # [print("{} => {}".format(s, c)) for s, c in assigned.items()]
         print("Backtacks: {}".format(self.backtracking))
         
-    def consistent_assignments(self, state, assignments):
+    def consistent(self, state, assignments):
         neighbors = self.region[state]        
         for n in neighbors:
             if n in assignments and assignments[n] == assignments[state]:
@@ -155,12 +155,11 @@ class MapColoring():
     def forward_checking(self, state, value, unassigned):
         changed = []
         for n in self.region[state]:
-            if n != state and n in unassigned: 
+            if n in unassigned: 
                 self.domain[n] = ma.masked_where(self.domain[n]==value, self.domain[n])
                 changed.append([n, value])
                 if len(self.domain[n].compressed()) == 0:
                     return False, changed
-        
         return True, changed
     
     def propagate(self, state, unassigned):
@@ -237,7 +236,7 @@ class MapColoring():
             print("Initial State: {}".format(state))
         else:
             # Follow static path of states
-           state = unassigned[0] 
+            state = random_variable(unassigned)
             
         # Select values
         if heuristics:
@@ -266,7 +265,7 @@ class MapColoring():
             # Check if forward and prop were successful
             if forward and prop:
                 # Check consistency
-                if self.consistent_assignments(state, assignments):
+                if self.consistent(state, assignments):
                     # return of None means failure
                     assigned = self.dfs(assignments, heuristics, 
                                         forward_checking, propagation)
@@ -278,4 +277,6 @@ class MapColoring():
             if forward_checking: self.undo_mask(forward_changed)
             if propagation: self.undo_mask(prop_changed)
             self.backtracking += 1
+            # if self.backtracking % 1e6:
+            #     print("Backtracks: {}".format(self.backtracking), flush=True)
         return None
