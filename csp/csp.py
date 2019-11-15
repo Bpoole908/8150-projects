@@ -155,8 +155,9 @@ class MapColoring():
     def forward_checking(self, state, value, unassigned):
         changed = []
         for n in self.region[state]:
-            if n in unassigned: 
+            if n in unassigned and value in self.domain[n].compressed():
                 self.domain[n] = ma.masked_where(self.domain[n]==value, self.domain[n])
+                # print(value, self.domain[n].compressed())
                 changed.append([n, value])
                 if len(self.domain[n].compressed()) == 0:
                     return False, changed

@@ -5,4 +5,4 @@ csp:
   seed: 1
   forward_checking: True # enable forward checking
   propagation: True # enable propagation through singletons 
-  heuristics: False  # enable heuristics for unassigned selection and domain selection
+  heuristics: True  # enable heuristics for unassigned selection and domain selection
