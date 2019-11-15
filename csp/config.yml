@@ -1,6 +1,6 @@
 region: us # optionsL: us or au
-seed: 3
-domain_size: 5 # number of colors to work with
-forward: True # enable forward checking
+seed: 1
+domain_size: 4 # number of colors to work with
+forward: False # enable forward checking
 propagation: False # enable propagation through singletons 
 heuristic: null # options mrv, degree, least, or null (i.e. None)
