@@ -359,7 +359,5 @@ class MapColoring():
             # propgations due to the nature of local copies of the domain.
             self.backtracking += 1
             assignments.pop(state)
-
-            # if self.backtracking % 1e6:
-            #     print("Backtracks: {}".format(self.backtracking), flush=True)
+            
         return None
