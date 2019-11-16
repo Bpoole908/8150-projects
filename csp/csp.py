@@ -25,7 +25,7 @@ def bordered(text):
     return '\n'.join(res)
 
 def timeme(func):
-    """ Decoractor for tracking the runtime of a function.
+    """ Decorator for tracking the runtime of a function.
 
         Args:
             func (function): A Python function.
@@ -44,25 +44,43 @@ def timeme(func):
 
 def random_variable(unassigned):
     """ Selects random variables from unassigned variables
+    
+        Args:
+            unassigned (iterable): Any iterable object that contains names of
+                values in constraints.
     """
     return random.choice(unassigned)
 
 def MRV(unassigned, domain):
-    """ Selects variable with the smallest doamin from unassigned variables
+    """ Selects variable with the smallest domain from unassigned variables
+    
+        Args:
+            domain (dict): Dictionary where nodes act as keys mapped to potential
+                values.
+                
+            unassigned (iterable): Any iterable object that contains names of
+                values in constraints.
     """
     smallest_domain = float('inf')
     
     for u in unassigned:
-        u_values = domain[u].compressed()
-        if len(u_values) < smallest_domain:
+        u_domain = domain[u]
+        if len(u_domain) < smallest_domain:
             smallest_var = u
-            smallest_domain = len(u_values)
+            smallest_domain = len(u_domain)
 
     return smallest_var
 
-def degree_constraint(unassigned, constraints):
+def degree_constraint(constraints, unassigned):
     """ Selects variable with the highest number of constraints from unassigned
         variables.
+        
+        Args:
+            constraints (dict): Dictionary of constraints are nodes are keys
+                which are mapped to their constraints. 
+                
+            unassigned (iterable): Any iterable object that contains names of
+                values in constraints.
     """
     max_constraint = float('-inf')
     for u in unassigned:
@@ -72,33 +90,38 @@ def degree_constraint(unassigned, constraints):
             
     return max_var
 
-def least_constraining_value(state, constraints, domain, unassigned):
-    """ Returns domain sorted by most usuable value based on neighboring domains
-    
+def least_constraining_value(state, constraints, unassigned, domain):
+    """ Returns domain sorted by most usable value based on neighboring domains
+
+        Args:
+            constraints (dict): Dictionary of constraints are nodes are keys
+                which are mapped to their constraints. 
+                
+            unassigned (iterable): Any iterable object that contains names of
+                values in constraints.
+
+            domain (dict): Dictionary where nodes act as keys mapped to potential
+                values.
     """
-    state_values =  {v:0 for v in domain[state].compressed()}
+    state_values =  {v:0 for v in domain[state]}
     neighbors = constraints[state]
-    # print(state, domain[state].compressed())
+    
     for n in neighbors:
-        if  n != state and n in unassigned:
-            neighbors_values = domain[n].compressed()
-            for nv in neighbors_values:
+        if n != state and n in unassigned:
+            neighbor_domain = domain[n] 
+            for nv in neighbor_domain:
                 if nv in state_values:
                     state_values[nv] += 1
-                    # print("\t", n, nv)
 
-    # sorted(state_values.items(), key=lambda x: x[1]["count"], reverse=True)
     sorted_states = sorted(state_values.items(), key=lambda x:x[1], reverse=True)
     values = [i[0] for i in sorted_states]
-    # print(sorted_states)
 
     return values
 
 class MapColoring():
     def __init__(self, region, domain_size):
         self.region = region
-        # self.domain = {np.arange(domain_size) for s in region.keys()}
-        self.domain = {s:ma.masked_array(np.arange(domain_size)) for s in region.keys()}
+        self.domain = {s:np.arange(domain_size) for s in region.keys()}
         self.backtracking = 0
         
     @timeme
@@ -107,13 +130,20 @@ class MapColoring():
         random.seed(seed)
             
         assigned = self.dfs(
-            forward_checking=forward_checking, propagation=propagation,
-            heuristics=heuristics)
+            domain=self.domain, forward_checking=forward_checking, 
+            propagation=propagation, heuristics=heuristics)
         self.check_assignments(assigned)
         
         return assigned
     
     def check_assignments(self, assigned):
+        """ Checks final color assignments are actually consistent.
+            
+            Args:
+                assigned: Dictionary where states that have been 
+                    assigned a color act as keys and the actual color assigned
+                    is the value.
+        """ 
         if assigned is None:
             print("No answer found!")
             return
@@ -129,6 +159,14 @@ class MapColoring():
         print("Assignments are consistent!")
         
     def print_info(self, assigned):
+        """ Prints final color assignments and checks if assignments are actually
+            consistent.
+            
+            Args:
+                assigned: Dictionary where states that have been 
+                    assigned a color act as keys and the actual color assigned
+                    is the value.
+        """ 
 
         for s, c in assigned.items():
             n_colors = {}
@@ -137,65 +175,96 @@ class MapColoring():
                 
             print("{} color: {}".format(s, c)) 
             print("\t Neighboring colors: {}".format(list(n_colors.values())))
-        # [print("{} => {}".format(s, c)) for s, c in assigned.items()]
+
         print("Backtacks: {}".format(self.backtracking))
         
     def consistent(self, state, assignments):
+        """ Checks for consistency in an color assignment. 
+
+            Args:
+                state (string): Name of current state.
+                
+                assignments (dict): Dictionary where states that have been 
+                    assigned a color act as keys and the actual color assigned
+                    is the value.
+            
+            Returns:
+                Returns a boolean where True indicates assignment maintains
+                consitency.
+        """
         neighbors = self.region[state]        
         for n in neighbors:
             if n in assignments and assignments[n] == assignments[state]:
                 return False
         
         return True
-            
-    def undo_mask(self, changed):
-        for var, value in changed:
-            self.domain[var].mask[value] = False               
-                
-    def forward_checking(self, state, value, unassigned):
-        changed = []
-        for n in self.region[state]:
-            if n in unassigned and value in self.domain[n].compressed():
-                self.domain[n] = ma.masked_where(self.domain[n]==value, self.domain[n])
-                # print(value, self.domain[n].compressed())
-                changed.append([n, value])
-                if len(self.domain[n].compressed()) == 0:
-                    return False, changed
-        return True, changed
-    
-    def propagate(self, state, unassigned):
-        """ Runs propagation through singleton.
-        
 
+    def forward_checking(self, color, neighbors, unassigned, domain):
+        """ Eliminates colors from neighbors when a color is selected for a given
+            state.
+        
+            Args:
+                color (int): Color selected by current state to assign to itself.
+                
+                neighbors (list): Neighbors of current state
+                
+                unassigned (iterable): Any iterable object that contains names of
+                    values in constraints.
+                
+                domain (dict): Dictionary where states act as keys mapped to 
+                    potential remaining colors in their domain.
+            
+            Return:
+                Returns True if colors in neighboring domains can be eliminated
+                without producing an empty domain. Also, returns updated domain.
+        """
+        for n in neighbors:
+            if n in unassigned and color in domain[n]:
+                color_loc = np.where(domain[n] == color)
+                domain[n] = np.delete(domain[n], color_loc, axis=0)
+                if len(domain[n]) == 0:
+                    return False, domain
+
+        return True, domain
+    
+    def propagate(self, unassigned, domain):
+        """ Eliminates colors from neighbors if a state with a single color is 
+            detected.
+        
+            Args:
+                unassigned (iterable): Any iterable object that contains names of
+                    values in constraints.
+                
+                domain (dict): Dictionary where states act as keys mapped to 
+                    potential remaining colors in their domain.
         """
         changed = []
         single_valued_domains = Queue()
+        
+        # Load any states with a single color in their domain
         for u in unassigned:
-            if u != state and len(self.domain[u].compressed()) == 1:
+            if len(domain[u]) == 1:
                 single_valued_domains.put(u)
 
+        # Loop through single valued domain states adding more as you go (if needed).
         while not single_valued_domains.empty():
             single_state = single_valued_domains.get()
-            single_value = self.domain[single_state].compressed()[0] 
-
-            for n in self.region[single_state]:
-                # print(n)
-                if n!= state and n in unassigned:
-                    if single_value in self.domain[n].compressed():
-                        # print("\tMASKED")
-                        self.domain[n] = ma.masked_where(
-                            self.domain[n]==single_value, self.domain[n])
-                        changed.append([n, single_value])
-                        
-                        if len(self.domain[n].compressed()) == 1:
-                            # print("\tQUEUED")
-                            single_valued_domains.put(n) 
-                        elif len(self.domain[n].compressed()) == 0:
-                            return False, changed
-                    
-        return True, changed
+            single_color= domain[single_state][0]
             
-    def dfs(self, assignments={}, heuristics=False, forward_checking=False, propagation=False):
+            for n in self.region[single_state]:
+                if n in unassigned:
+                    if single_color in domain[n]:
+                        color_loc = np.where(domain[n] == single_color)
+                        domain[n] = np.delete(domain[n], color_loc, axis=0)
+                        if len(domain[n]) == 1: 
+                            single_valued_domains.put(n) 
+                        elif len(domain[n]) == 0: 
+                            return False, domain
+                    
+        return True, domain
+            
+    def dfs(self, domain, assignments={}, heuristics=False, 
+            forward_checking=False, propagation=False):
         """ Run depth first search regarding CSP.
 
             Uses recursive DFS to inherently allow for backtracking.
@@ -219,65 +288,78 @@ class MapColoring():
         if len(assignments) == len(self.region):
             return assignments
 
-        # Select unassigned variable
-        unassigned = [s for s in self.region.keys() if s not in assignments]
+        # Find all unassigned variable
+        unassigned = {s:{} for s in self.region.keys() if s not in assignments}
 
-        # Select variable
+        # Select state (variable) either using heuristics or randomly otherwise.
         if heuristics:
             if len(assignments) == 0:
                 # Initialize with state which has most constraints
-                state = degree_constraint(unassigned, self.region)
+                state = degree_constraint(unassigned=unassigned.keys(), 
+                                          constraints=self.region)
                 print("Initial State: {}".format(state))
             else:
                 # Follow MRV
-                state = MRV(unassigned, self.domain)
-        elif len(assignments) == 0:
+                state = MRV(unassigned=unassigned.keys(), domain=domain)
+        else:
             # Initialize with random state
-            state = random_variable(unassigned)
-            print("Initial State: {}".format(state))
-        else:
-            # Follow static path of states
-            state = random_variable(unassigned)
-            
-        # Select values
+            state = random_variable(unassigned=list(unassigned.keys()))
+            if len(assignments) == 0:
+                print("Initial State: {}".format(state))
+               
+        # Remove selected state from unassigned
+        # we can do this because in this local instance this is the only state
+        # we select. Therefore, this does no effect any other recursion instance.
+        unassigned.pop(state)
+        
+        # Select values either based on heuristic or given order.
         if heuristics:
-            domain = least_constraining_value(state, self.region, 
-                                              self.domain, unassigned)
+            colors = least_constraining_value(state=state, 
+                                              constraints=self.region, 
+                                              unassigned=unassigned.keys(),
+                                              domain=domain)
         else:
-            domain = self.domain[state].compressed()
+            colors = domain[state]
             
-        for value in domain:
-            assignments[state] = value
+        for color in colors:
+            assignments[state] = color # Assign color we want to try
+            
+             # Copy domain instead of tracking changes
+            local_domain = domain.copy() if forward_checking or propagation else domain
 
-            # Preform forward checking if enabled
             if forward_checking:
-                forward, forward_changed = self.forward_checking(
-                    state, value, unassigned)
+                forward, local_domain = self.forward_checking(
+                    color=color, neighbors=self.region[state], 
+                    unassigned=unassigned.keys(), domain=local_domain)
             else:
                 forward = True
-            
-            # Preform propgation through singletons if enabled
+ 
             if propagation:
-                # print(assignments)
-                prop, prop_changed = self.propagate(state, unassigned)
+                prop, local_domain = self.propagate(unassigned=unassigned.keys(), 
+                                                    domain=local_domain)
             else:
-                prop = True
+                prop = True  
                 
             # Check if forward and prop were successful
             if forward and prop:
                 # Check consistency
-                if self.consistent(state, assignments):
+                if self.consistent(state=state, assignments=assignments):
                     # return of None means failure
-                    assigned = self.dfs(assignments, heuristics, 
-                                        forward_checking, propagation)
+                    assigned = self.dfs(domain=local_domain, 
+                                        assignments=assignments, 
+                                        heuristics=heuristics, 
+                                        forward_checking=forward_checking, 
+                                        propagation=propagation)
                     # Check if a failure occurred
                     if assigned is not None:
                         return assigned
-            # Now backtrack undoing previous assignment, forward and propagation
-            assignments.pop(state)
-            if forward_checking: self.undo_mask(forward_changed)
-            if propagation: self.undo_mask(prop_changed)
+                    
+            # Now backtrack undoing previous color
+            # At this point we are inherently forgetting any forward or 
+            # propgations due to the nature of local copies of the domain.
             self.backtracking += 1
+            assignments.pop(state)
+
             # if self.backtracking % 1e6:
             #     print("Backtracks: {}".format(self.backtracking), flush=True)
         return None

@@ -1,8 +1,8 @@
 problem:
-  region: us # optionsL: us or au
-  domain_size: 4 # number of colors to work with
-csp:
-  seed: 1
-  forward_checking: True # enable forward checking
-  propagation: True # enable propagation through singletons 
+  region: au # optionsL: us or au
+  domain_size: 3 # number of colors to work with
+csp:              
+  seed: 3
+  forward_checking: False # enable forward checking
+  propagation: False # enable propagation through singletons 
   heuristics: True  # enable heuristics for unassigned selection and domain selection

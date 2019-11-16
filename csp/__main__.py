@@ -45,6 +45,12 @@ def load_config(config_path):
     return params
 
 def region_selector(region):
+    """ Select region yml file to load 
+        
+        Args:
+            region (str): String to identify which region to use for map 
+                coloring.
+    """
     region_file = '{}-adjacency.yml'
     
     if region.lower() == 'us':
@@ -62,7 +68,9 @@ if __name__ == '__main__':
     problem_kwrags = config['problem']
     csp_kwargs = config['csp']
     
+    # Select region
     region = region_selector(problem_kwrags['region'])
 
+    # Initialize and run map coloring CSP solver
     csp = MapColoring(region, problem_kwrags['domain_size'])
     assigned = csp(**csp_kwargs)
